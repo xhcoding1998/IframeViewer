@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iframe 检测器</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <!-- 顶部标题栏 -->
+  <header class="header">
+    <div class="header-brand">
+      <svg class="brand-icon" viewBox="0 0 20 20" fill="none">
+        <rect x="1" y="1" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="4" y="4" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 1.5"/>
+        <path d="M4 15h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M7 15v-3M10 15v-3M13 15v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="brand-name">Iframe 检测器</div>
+        <div class="brand-sub" id="page-host">—</div>
+      </div>
+    </div>
+    <button id="btn-scan" class="btn btn-primary">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="7" cy="7" r="5"/>
+        <path d="m11 11 3 3" stroke-linecap="round"/>
+        <path d="M5 7h4M7 5v4" stroke-linecap="round"/>
+      </svg>
+      扫描 iframe
+    </button>
+  </header>
+
+  <!-- 扫描中 / 空状态 / 结果数量 -->
+  <div class="status-bar" id="status-bar">
+    <div id="state-idle" class="state-block state-idle">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="8" cy="8" r="6"/>
+        <path d="M8 5v4l2.5 1.5" stroke-linecap="round"/>
+      </svg>
+      点击「扫描 iframe」按钮开始检测
+    </div>
+    <div id="state-loading" class="state-block state-loading hidden">
+      <div class="mini-spinner"></div>
+      扫描中，请稍候...
+    </div>
+    <div id="state-result" class="state-block state-result hidden">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <polyline points="2 8 6 12 14 4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      发现 <strong id="result-count">0</strong> 个 iframe
+    </div>
+    <div id="state-empty" class="state-block state-empty hidden">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="8" cy="8" r="6"/>
+        <path d="M8 5v4M8 11v.5" stroke-linecap="round"/>
+      </svg>
+      未找到 iframe 元素
+    </div>
+  </div>
+
+  <!-- iframe 卡片列表 -->
+  <main id="iframe-list" class="iframe-list"></main>
+
+  <!-- ===== 快照预览弹层 ===== -->
+  <div id="snapshot-modal" class="modal hidden">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-panel">
+
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <div class="modal-badge">IFRAME #<span id="modal-index">0</span></div>
+          <span class="modal-title" id="modal-title">快照预览</span>
+        </div>
+        <div class="modal-header-right">
+          <button id="modal-open-url" class="btn btn-sm btn-outline" title="在新标签页打开">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M6 2H2a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V8"/>
+              <path d="M9 1h4v4M13 1 7 7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            打开
+          </button>
+          <button id="modal-close" class="btn btn-sm btn-ghost-dark">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 1l12 12M13 1 1 13" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 标签页：快照 / 参数 -->
+      <div class="modal-tabs">
+        <button class="tab-btn active" data-tab="snapshot">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="1" y="1" width="12" height="12" rx="1.5"/>
+            <circle cx="5" cy="5" r="1.2"/>
+            <path d="M1 9l3-3 2 2 2-2 5 5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          快照预览
+        </button>
+        <button class="tab-btn" data-tab="params">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M2 4h10M2 7h6M2 10h8" stroke-linecap="round"/>
+          </svg>
+          URL 参数
+          <span class="tab-count" id="param-tab-count">0</span>
+        </button>
+        <button class="tab-btn" data-tab="info">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="7" cy="7" r="6"/>
+            <path d="M7 6v4M7 4.5v.5" stroke-linecap="round"/>
+          </svg>
+          属性信息
+        </button>
+      </div>
+
+      <!-- 快照面板 -->
+      <div class="tab-panel active" id="panel-snapshot">
+
+        <!-- 图像显示区 -->
+        <div class="snapshot-area" id="snapshot-area">
+          <!-- 空状态 / 加载中 -->
+          <div class="snapshot-placeholder" id="snapshot-placeholder">
+            <div class="snap-idle" id="snap-idle">
+              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="4" y="8" width="40" height="32" rx="4"/>
+                <circle cx="17" cy="20" r="4"/>
+                <path d="M4 32l10-10 7 7 6-6 17 17" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <p>点击下方按钮截取 iframe 快照</p>
+              <p class="snap-hint">滚轮缩放 · 拖拽平移 · 双击还原</p>
+            </div>
+            <div class="snap-loading hidden" id="snap-loading">
+              <div class="spinner"></div>
+              <p>正在截图...</p>
+            </div>
+          </div>
+
+          <!-- 缩放视口（图片在此容器内变换） -->
+          <div class="zoom-viewport hidden" id="zoom-viewport">
+            <img id="snapshot-img" class="snapshot-img" alt="iframe 快照" draggable="false" />
+          </div>
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="snapshot-toolbar" id="snapshot-toolbar">
+          <!-- 截图按钮（无快照时全宽显示） -->
+          <button id="btn-capture" class="btn btn-primary btn-full">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="1" y="3" width="14" height="11" rx="1.5"/>
+              <circle cx="8" cy="8.5" r="2.5"/>
+              <path d="M5 3V2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke-linecap="round"/>
+            </svg>
+            截取快照
+          </button>
+
+          <!-- 有快照后显示的控件组 -->
+          <div class="zoom-controls hidden" id="zoom-controls">
+            <button id="btn-recapture" class="btn btn-sm btn-ghost" title="重新截图">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="1" y="2" width="12" height="10" rx="1.2"/>
+                <circle cx="7" cy="7" r="2"/>
+                <path d="M4 2V1a.4.4 0 0 1 .4-.4h5.2a.4.4 0 0 1 .4.4v1" stroke-linecap="round"/>
+              </svg>
+            </button>
+
+            <div class="zoom-divider"></div>
+
+            <button id="btn-zoom-out" class="btn btn-sm btn-ghost zoom-step" title="缩小 (-)">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 7h10" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <span id="zoom-label" class="zoom-label">100%</span>
+            <button id="btn-zoom-in" class="btn btn-sm btn-ghost zoom-step" title="放大 (+)">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 2v10M2 7h10" stroke-linecap="round"/>
+              </svg>
+            </button>
+
+            <button id="btn-zoom-fit" class="btn btn-sm btn-ghost" title="适应窗口 (双击)">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M1 5V1h4M9 1h4v4M13 9v4H9M5 13H1V9" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <div class="zoom-divider"></div>
+
+            <button id="btn-save-snapshot" class="btn btn-sm btn-outline" title="保存图片">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M7 2v7M4.5 7l2.5 2.5L9.5 7" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 11v1.5h10V11" stroke-linecap="round"/>
+              </svg>
+              保存
+            </button>
+          </div>
+        </div>
+
+        <div class="snapshot-size-hint" id="snapshot-size-hint"></div>
+      </div>
+
+      <!-- URL 参数面板 -->
+      <div class="tab-panel" id="panel-params">
+
+        <!-- Base URL + Full URL 合并展示区 -->
+        <div class="pe-url-info-section">
+
+          <!-- Base URL 行 -->
+          <div class="pe-url-row">
+            <span class="pe-url-label">Base URL</span>
+            <div class="pe-url-value-wrap">
+              <code class="pe-base-url" id="param-base-url"></code>
+              <button class="icon-btn" data-copy="base-url" title="复制 Base URL">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="4" y="4" width="8" height="8" rx="1.2"/>
+                  <path d="M2 10V2h8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Full URL 行 -->
+          <div class="pe-url-row">
+            <span class="pe-url-label">Full URL</span>
+            <div class="pe-url-value-wrap">
+              <code class="pe-result-url" id="pe-result-url"></code>
+              <button class="icon-btn" id="btn-copy-full-url" title="复制完整链接">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="4" y="4" width="8" height="8" rx="1.2"/>
+                  <path d="M2 10V2h8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 参数展示区（只读） -->
+        <div class="pe-params-section">
+          <div class="pe-params-header">
+            <span class="pe-section-label">查询参数</span>
+            <span class="pe-params-count" id="params-hint">0</span>
+          </div>
+          <div id="param-rows" class="param-rows"></div>
+          <div class="no-params hidden" id="no-params">
+            暂无查询参数
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 属性信息面板 -->
+      <div class="tab-panel" id="panel-info">
+        <table class="info-table" id="info-table">
+          <tbody></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 复制成功提示 -->
+  <div id="copy-tip" class="copy-tip hidden">已复制</div>
+
+  <!-- 底部版权栏 -->
+  <footer class="app-footer">
+    <span class="app-footer-version">v2.0.0</span>
+    <span class="app-footer-sep">·</span>
+    <span class="app-footer-credit">Developed by <strong>xiehui</strong></span>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
