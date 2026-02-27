@@ -1,32 +1,32 @@
 /* ===== CSS 变量（浅色主题 · 蓝色主题色）===== */
 :root {
-  --bg: #f0f5ff;
+  --bg: #f5f4f2;
   --bg-card: #ffffff;
   --bg-header: #ffffff;
-  --bg-input: #e8f0fe;
-  --bg-tag: #dbeafe;
+  --bg-input: #f0efed;
+  --bg-tag: #eff6ff;
   --bg-modal: #ffffff;
-  --bg-modal-header: #f5f8ff;
+  --bg-modal-header: #f8f8f7;
   --bg-tab-active: #ffffff;
-  --bg-tab: #e8f0fe;
-  --bg-snapshot: #e8f0fe;
-  --border: #c7d8f8;
-  --border-strong: #93b4f0;
-  --text-primary: #0f1f3d;
-  --text-secondary: #3a5080;
-  --text-muted: #7a95c0;
+  --bg-tab: #f0efed;
+  --bg-snapshot: #eceae7;
+  --border: #e4e3e0;
+  --border-strong: #c9c8c4;
+  --text-primary: #18171a;
+  --text-secondary: #52525b;
+  --text-muted: #a1a1aa;
   --text-on-accent: #ffffff;
-  --accent: #1d6ae5;
-  --accent-hover: #155dc8;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
   --accent-light: #dbeafe;
-  --accent-mid: #93b4f0;
-  --accent-dim: rgba(29, 106, 229, 0.12);
-  --success: #16a36a;
-  --danger: #e03e3e;
+  --accent-mid: #93c5fd;
+  --accent-dim: rgba(37, 99, 235, 0.10);
+  --success: #16a34a;
+  --danger: #dc2626;
   --warning: #d97706;
-  --shadow-sm: 0 1px 4px rgba(29, 106, 229, 0.08), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow: 0 4px 20px rgba(29, 106, 229, 0.12), 0 2px 8px rgba(0,0,0,0.06);
-  --shadow-modal: 0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.08);
   --radius-sm: 6px;
   --radius: 10px;
   --radius-lg: 14px;
@@ -116,9 +116,9 @@ body {
 .btn-primary {
   background: var(--accent);
   color: var(--text-on-accent);
-  box-shadow: 0 2px 8px rgba(79, 82, 232, 0.3);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
 }
-.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 2px 12px rgba(79, 82, 232, 0.4); }
+.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 2px 12px rgba(37, 99, 235, 0.38); }
 
 .btn-outline {
   background: transparent;
@@ -469,7 +469,7 @@ body {
 .modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(26, 30, 48, 0.45);
+  background: rgba(10, 10, 12, 0.48);
   backdrop-filter: blur(3px);
 }
 
@@ -646,13 +646,13 @@ body {
   cursor: grab;
   /* 棋盘格背景，凸显透明区域 */
   background-image:
-    linear-gradient(45deg, #dde0ec 25%, transparent 25%),
-    linear-gradient(-45deg, #dde0ec 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #dde0ec 75%),
-    linear-gradient(-45deg, transparent 75%, #dde0ec 75%);
+    linear-gradient(45deg, #dddbd8 25%, transparent 25%),
+    linear-gradient(-45deg, #dddbd8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #dddbd8 75%),
+    linear-gradient(-45deg, transparent 75%, #dddbd8 75%);
   background-size: 12px 12px;
   background-position: 0 0, 0 6px, 6px -6px, -6px 0;
-  background-color: #eaecf4;
+  background-color: #e8e6e3;
 }
 .zoom-viewport.dragging { cursor: grabbing; }
 .zoom-viewport.hidden { display: none; }
@@ -878,7 +878,7 @@ body {
 
 .param-row:focus-within {
   border-color: var(--accent-mid);
-  box-shadow: 0 0 0 2px rgba(29, 106, 229, 0.12);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 
 .param-row-key {
@@ -941,15 +941,6 @@ body {
   border-radius: 0;
 }
 .param-row-del .icon-btn:hover { background: transparent; color: var(--danger); }
-.param-row-del .icon-btn.confirming {
-  color: var(--danger);
-  background: #fde8e8;
-  animation: confirm-pulse 0.6s ease infinite alternate;
-}
-@keyframes confirm-pulse {
-  from { background: #fde8e8; }
-  to   { background: #ffc5c5; }
-}
 
 /* 只读参数行：复制按钮列 */
 .param-row-ro { cursor: default; }
@@ -1074,13 +1065,290 @@ body {
 .info-val-bool-true { color: var(--success); font-weight: 600; }
 .info-val-bool-false { color: var(--danger); font-weight: 600; }
 
+/* ===== iframe 内嵌预览弹窗 ===== */
+.iframe-preview-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-modal);
+  animation: ipm-in 0.18s ease;
+}
+.iframe-preview-modal.hidden { display: none; }
+
+@keyframes ipm-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 头部工具栏 */
+.ipm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-header);
+  border-bottom: 1.5px solid var(--border);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.ipm-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ipm-favicon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--accent-light);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ipm-favicon svg { width: 13px; height: 13px; }
+.ipm-favicon img { width: 16px; height: 16px; border-radius: 3px; object-fit: contain; }
+
+.ipm-url-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.ipm-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ipm-url {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+}
+
+.ipm-header-right {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ipm-ctrl-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  justify-content: center;
+}
+.ipm-ctrl-btn svg { width: 13px; height: 13px; }
+
+/* 主体区域 */
+.ipm-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: #fff;
+}
+
+/* 缩放包裹层：固定原始尺寸，通过 transform 缩放 */
+.ipm-scale-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  /* width / height 由 JS 动态设置为 iframe 原始尺寸 */
+}
+
+.ipm-iframe {
+  display: block;
+  border: none;
+  /* width / height 由 JS 动态设置 */
+}
+
+/* 缩放比例徽标 */
+.ipm-scale-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-light);
+  border: 1px solid var(--accent-mid);
+  padding: 2px 7px;
+  border-radius: 20px;
+  user-select: none;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 加载遮罩 */
+.ipm-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--bg);
+  font-size: 12px;
+  color: var(--text-muted);
+  z-index: 1;
+}
+.ipm-loading.hidden { display: none; }
+
+/* 跨域拦截提示 */
+.ipm-blocked {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg);
+  padding: 24px;
+  z-index: 2;
+}
+.ipm-blocked.hidden { display: none; }
+.ipm-blocked svg { width: 44px; height: 44px; color: var(--text-muted); opacity: 0.5; }
+
+.ipm-blocked-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ipm-blocked-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ===== 自定义确认弹窗 ===== */
+.confirm-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.confirm-dialog.hidden { display: none; }
+
+.confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 12, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.confirm-panel {
+  position: relative;
+  width: 288px;
+  background: var(--bg-modal);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  padding: 20px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: confirm-in 0.15s ease;
+}
+@keyframes confirm-in {
+  from { opacity: 0; transform: scale(0.94) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.confirm-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #fde8e8;
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.confirm-icon svg { width: 20px; height: 20px; }
+
+/* 重载确认：警告色 */
+.confirm-icon--reload {
+  background: #fef3c7;
+  color: var(--warning);
+}
+
+/* 警告色按钮 */
+.btn-warning {
+  background: var(--warning);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+}
+.btn-warning:hover { background: #b45309; box-shadow: 0 2px 12px rgba(217, 119, 6, 0.4); }
+
+.confirm-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.confirm-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.confirm-message {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.confirm-message strong {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.28);
+}
+.btn-danger:hover { background: #b91c1c; box-shadow: 0 2px 12px rgba(220, 38, 38, 0.38); }
+
 /* ===== Copy Tip ===== */
 .copy-tip {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(26, 30, 48, 0.85);
+  background: rgba(15, 15, 18, 0.88);
   color: #fff;
   font-size: 12px;
   font-weight: 500;

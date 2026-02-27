@@ -27,7 +27,7 @@
         <path d="m11 11 3 3" stroke-linecap="round"/>
         <path d="M5 7h4M7 5v4" stroke-linecap="round"/>
       </svg>
-      扫描 iframe
+      重新扫描
     </button>
   </header>
 
@@ -38,7 +38,7 @@
         <circle cx="8" cy="8" r="6"/>
         <path d="M8 5v4l2.5 1.5" stroke-linecap="round"/>
       </svg>
-      点击「扫描 iframe」按钮开始检测
+      点击「重新扫描」按钮可重新扫描当前页面所有IFRAME元素
     </div>
     <div id="state-loading" class="state-block state-loading hidden">
       <div class="mini-spinner"></div>
@@ -256,6 +256,94 @@
         </table>
       </div>
 
+    </div>
+  </div>
+
+  <!-- iframe 内嵌预览弹窗 -->
+  <div id="iframe-preview-modal" class="iframe-preview-modal hidden">
+    <div class="ipm-header">
+      <div class="ipm-header-left">
+        <div class="ipm-favicon" id="ipm-favicon">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="1" y="1" width="12" height="12" rx="2"/>
+            <path d="M1 5h12" stroke-linecap="round"/>
+            <circle cx="3.5" cy="3" r="0.7" fill="currentColor" stroke="none"/>
+            <circle cx="5.5" cy="3" r="0.7" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <div class="ipm-url-wrap">
+          <span class="ipm-title" id="ipm-title">加载中...</span>
+          <span class="ipm-url" id="ipm-url"></span>
+        </div>
+      </div>
+      <div class="ipm-header-right">
+        <span class="ipm-scale-badge" id="ipm-scale-badge">100%</span>
+        <button id="ipm-btn-reload" class="btn btn-sm btn-ghost ipm-ctrl-btn" title="刷新">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M1.5 7A5.5 5.5 0 1 0 3.4 3.4" stroke-linecap="round"/>
+            <path d="M1.5 2v3h3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button id="ipm-btn-newtab" class="btn btn-sm btn-ghost ipm-ctrl-btn" title="在新标签页打开">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M6 2H2a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V8"/>
+            <path d="M9 1h4v4M13 1 7 7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button id="ipm-btn-close" class="btn btn-sm btn-ghost ipm-ctrl-btn" title="关闭">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 1l12 12M13 1 1 13" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="ipm-body">
+      <!-- 加载遮罩 -->
+      <div class="ipm-loading" id="ipm-loading">
+        <div class="spinner"></div>
+        <span>正在加载...</span>
+      </div>
+      <!-- 跨域拦截提示 -->
+      <div class="ipm-blocked hidden" id="ipm-blocked">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="24" cy="24" r="20"/>
+          <path d="M24 14v12M24 32v1.5" stroke-linecap="round" stroke-width="2.5"/>
+        </svg>
+        <div class="ipm-blocked-title">页面拒绝在 iframe 中加载</div>
+        <div class="ipm-blocked-hint">该网站设置了 X-Frame-Options 或 CSP，无法嵌入预览</div>
+        <button id="ipm-btn-fallback" class="btn btn-primary" style="margin-top:8px">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M6 2H2a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V8"/>
+            <path d="M9 1h4v4M13 1 7 7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          在新标签页打开
+        </button>
+      </div>
+      <div class="ipm-scale-wrap" id="ipm-scale-wrap">
+        <iframe id="ipm-iframe" class="ipm-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自定义二次确认弹窗 -->
+  <div id="confirm-dialog" class="confirm-dialog hidden" role="dialog" aria-modal="true">
+    <div class="confirm-backdrop" id="confirm-backdrop"></div>
+    <div class="confirm-panel">
+      <div class="confirm-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10 11v4M14 11v4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="confirm-body">
+        <div class="confirm-title" id="confirm-title">确认删除</div>
+        <div class="confirm-message" id="confirm-message">确认删除该参数？</div>
+      </div>
+      <div class="confirm-actions">
+        <button id="confirm-cancel" class="btn btn-ghost">取消</button>
+        <button id="confirm-ok" class="btn btn-danger">删除</button>
+      </div>
     </div>
   </div>
 

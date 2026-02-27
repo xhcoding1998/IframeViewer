@@ -11,6 +11,85 @@
 const $ = (id) => document.getElementById(id);
 const escHtml = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+/**
+ * 自定义二次确认弹窗，返回 Promise<boolean>
+ * @param {string} message - 支持 HTML，关键词用 <strong> 高亮
+ */
+const CONFIRM_ICONS = {
+  delete: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M10 11v4M14 11v4" stroke-linecap="round"/>
+  </svg>`,
+  reload: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    <path d="M3 12a9 9 0 1 0 2.6-6.4" stroke-linecap="round"/>
+    <path d="M3 4v5h5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M12 8v4l3 2" stroke-linecap="round"/>
+  </svg>`,
+};
+
+/**
+ * 自定义二次确认弹窗，返回 Promise<boolean>
+ * @param {string} message       - 支持 HTML，关键词用 <strong> 高亮
+ * @param {object} [opts]
+ * @param {string} [opts.title]        - 弹窗标题，默认「确认删除」
+ * @param {string} [opts.confirmText]  - 确认按钮文字，默认「删除」
+ * @param {string} [opts.confirmClass] - 确认按钮额外 class，默认「btn-danger」
+ * @param {string} [opts.icon]         - 图标类型：'delete'（默认）| 'reload'
+ */
+function showConfirm(message, opts = {}) {
+  const {
+    title        = '确认删除',
+    confirmText  = '删除',
+    confirmClass = 'btn-danger',
+    icon         = 'delete',
+  } = opts;
+
+  return new Promise((resolve) => {
+    const dialog = $('confirm-dialog');
+
+    // 更新标题
+    $('confirm-title').textContent = title;
+
+    // 更新图标
+    const iconEl = dialog.querySelector('.confirm-icon');
+    iconEl.innerHTML = CONFIRM_ICONS[icon] ?? CONFIRM_ICONS.delete;
+    iconEl.className = `confirm-icon confirm-icon--${icon}`;
+
+    // 更新内容
+    $('confirm-message').innerHTML = message;
+
+    // 更新确认按钮
+    const btnOk = $('confirm-ok');
+    btnOk.textContent = confirmText;
+    btnOk.className = `btn ${confirmClass}`;
+
+    dialog.classList.remove('hidden');
+
+    const finish = (result) => {
+      dialog.classList.add('hidden');
+      btnOk.removeEventListener('click', onOk);
+      btnCancel.removeEventListener('click', onCancel);
+      backdrop.removeEventListener('click', onCancel);
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    };
+
+    const onOk     = () => finish(true);
+    const onCancel = () => finish(false);
+    const onKey    = (e) => { if (e.key === 'Escape') finish(false); };
+
+    const btnCancel = $('confirm-cancel');
+    const backdrop  = $('confirm-backdrop');
+
+    btnOk.addEventListener('click', onOk);
+    btnCancel.addEventListener('click', onCancel);
+    backdrop.addEventListener('click', onCancel);
+    document.addEventListener('keydown', onKey);
+
+    btnCancel.focus();
+  });
+}
+
 // ===== 全局状态 =====
 let iframeList = [];        // 扫描到的 iframe 数组
 let currentTabId = null;
@@ -36,6 +115,9 @@ async function init() {
   // 这些元素理论上都在 popup.html 中，但为防止模板变更导致空引用，这里加一层存在性判断
   const btnScan = $('btn-scan');
   if (btnScan) btnScan.addEventListener('click', handleScan);
+
+  // 打开插件时自动扫描，无需手动点击
+  handleScan();
 
   const modalBackdrop = $('modal-backdrop');
   if (modalBackdrop) modalBackdrop.addEventListener('click', closeModal);
@@ -254,14 +336,14 @@ function createIframeCard(iframe) {
             <path d="M1.5 7A5.5 5.5 0 1 0 3.4 3.4" stroke-linecap="round"/>
             <path d="M1.5 2v3h3" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          重新加载
+          页面重载
         </button>
         <button class="btn btn-sm btn-outline btn-open-src">
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M6 2H2a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V8"/>
             <path d="M9 1h4v4M13 1 7 7" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          打开 src
+          预览地址
         </button>
       ` : ''}
     </div>
@@ -285,12 +367,19 @@ function createIframeCard(iframe) {
     card.querySelector('.card-no-params')?.classList.add('hidden');
     addCardParamRow(container, '', '', card, cardOriginalSrc, true);
   });
-  card.querySelector('.btn-reload-iframe')?.addEventListener('click', () => {
+  card.querySelector('.btn-reload-iframe')?.addEventListener('click', async () => {
+    const confirmed = await showConfirm(
+      `即将用当前参数重新加载页面中的 <strong>IFRAME #${index}</strong>，` +
+      `该操作会直接替换页面对应元素的 <code>src</code> 并触发重新渲染，` +
+      `<strong>无法撤销</strong>，确认继续？`,
+      { title: '确认重载', confirmText: '确认重载', confirmClass: 'btn-warning', icon: 'reload' }
+    );
+    if (!confirmed) return;
     reloadCardIframe(card, index, cardOriginalSrc);
   });
   card.querySelector('.btn-open-src')?.addEventListener('click', () => {
     const url = getCurrentCardUrl(card, cardOriginalSrc);
-    chrome.tabs.create({ url });
+    openIframePreview(url, width, height);
   });
 
   // 悬停高亮页面 iframe
@@ -325,25 +414,16 @@ function addCardParamRow(container, key, value, card, originalSrc, shouldFocus =
     inp.addEventListener('input', () => refreshCardUrl(card, originalSrc));
   });
 
-  row.querySelector('.icon-btn.danger').addEventListener('click', function () {
-    if (this.dataset.confirming === '1') {
-      clearTimeout(this._confirmTimer);
-      row.remove();
-      if (container.querySelectorAll('.param-row').length === 0) {
-        card.querySelector('.card-no-params')?.classList.remove('hidden');
-      }
-      refreshCardUrl(card, originalSrc);
-      updateCardParamCount(card);
-    } else {
-      this.dataset.confirming = '1';
-      this.title = '再次点击确认删除';
-      this.classList.add('confirming');
-      this._confirmTimer = setTimeout(() => {
-        delete this.dataset.confirming;
-        this.title = '删除此参数';
-        this.classList.remove('confirming');
-      }, 2500);
+  row.querySelector('.icon-btn.danger').addEventListener('click', async function () {
+    const keyVal = row.querySelector('.param-key-input')?.value || '该参数';
+    const confirmed = await showConfirm(`确认删除参数 <strong>${escHtml(keyVal)}</strong> ？`);
+    if (!confirmed) return;
+    row.remove();
+    if (container.querySelectorAll('.param-row').length === 0) {
+      card.querySelector('.card-no-params')?.classList.remove('hidden');
     }
+    refreshCardUrl(card, originalSrc);
+    updateCardParamCount(card);
   });
 
   container.appendChild(row);
@@ -1086,6 +1166,108 @@ function scrollAndGetRect(index) {
       }, 200);
     });
   });
+}
+
+// ===== iframe 内嵌预览弹窗 =====
+function openIframePreview(url, origWidth = 0, origHeight = 0) {
+  const modal      = $('iframe-preview-modal');
+  const iframe     = $('ipm-iframe');
+  const scaleWrap  = $('ipm-scale-wrap');
+  const loading    = $('ipm-loading');
+  const blocked    = $('ipm-blocked');
+  const titleEl    = $('ipm-title');
+  const urlEl      = $('ipm-url');
+  const favicon    = $('ipm-favicon');
+  const scaleBadge = $('ipm-scale-badge');
+
+  /** 按原始尺寸渲染 iframe，等比缩放适应容器并居中 */
+  function applyScale() {
+    const body = modal.querySelector('.ipm-body');
+    const bw = body.clientWidth;
+    const bh = body.clientHeight;
+    const iw = origWidth  > 0 ? origWidth  : bw;
+    const ih = origHeight > 0 ? origHeight : bh;
+    const scale = Math.min(bw / iw, bh / ih, 1);
+
+    iframe.style.width        = `${iw}px`;
+    iframe.style.height       = `${ih}px`;
+    scaleWrap.style.width     = `${iw}px`;
+    scaleWrap.style.height    = `${ih}px`;
+    scaleWrap.style.transform = `scale(${scale})`;
+    scaleWrap.style.left      = `${(bw - iw * scale) / 2}px`;
+    scaleWrap.style.top       = `${(bh - ih * scale) / 2}px`;
+    scaleBadge.textContent    = `${Math.round(scale * 100)}%`;
+  }
+
+  // 重置状态
+  iframe.src = '';
+  loading.classList.remove('hidden');
+  blocked.classList.add('hidden');
+  titleEl.textContent = '加载中...';
+  urlEl.textContent = url;
+
+  // 尝试从 URL 提取域名作为标题，并加载 favicon
+  try {
+    const u = new URL(url);
+    titleEl.textContent = u.hostname;
+    const faviconUrl = `${u.origin}/favicon.ico`;
+    favicon.innerHTML = `<img src="${escHtml(faviconUrl)}" onerror="this.parentNode.innerHTML='<svg viewBox=\\'0 0 14 14\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.8\\'><rect x=\\'1\\' y=\\'1\\' width=\\'12\\' height=\\'12\\' rx=\\'2\\'/><path d=\\'M1 5h12\\' stroke-linecap=\\'round\\'/><circle cx=\\'3.5\\' cy=\\'3\\' r=\\'0.7\\' fill=\\'currentColor\\' stroke=\\'none\\'/><circle cx=\\'5.5\\' cy=\\'3\\' r=\\'0.7\\' fill=\\'currentColor\\' stroke=\\'none\\'/></svg>'" />`;
+  } catch (_) {}
+
+  modal.classList.remove('hidden');
+
+  // 等 DOM 渲染后再取容器尺寸
+  requestAnimationFrame(applyScale);
+
+  // 加载超时检测（部分跨域页面 load 事件不会触发）
+  let loadTimer = setTimeout(() => {
+    loading.classList.add('hidden');
+    blocked.classList.remove('hidden');
+  }, 8000);
+
+  const onLoad = () => {
+    clearTimeout(loadTimer);
+    loading.classList.add('hidden');
+    applyScale();
+    // 尝试读取 iframe 标题（同源时有效）
+    try {
+      const t = iframe.contentDocument?.title;
+      if (t) titleEl.textContent = t;
+    } catch (_) {}
+  };
+
+  const onError = () => {
+    clearTimeout(loadTimer);
+    loading.classList.add('hidden');
+    blocked.classList.remove('hidden');
+  };
+
+  iframe.removeEventListener('load', iframe._loadHandler);
+  iframe.removeEventListener('error', iframe._errorHandler);
+  iframe._loadHandler  = onLoad;
+  iframe._errorHandler = onError;
+  iframe.addEventListener('load', onLoad);
+  iframe.addEventListener('error', onError);
+
+  iframe.src = url;
+
+  // 头部按钮事件
+  $('ipm-btn-reload').onclick = () => {
+    loading.classList.remove('hidden');
+    blocked.classList.add('hidden');
+    iframe.src = url;
+    loadTimer = setTimeout(() => {
+      loading.classList.add('hidden');
+      blocked.classList.remove('hidden');
+    }, 8000);
+  };
+  $('ipm-btn-newtab').onclick  = () => chrome.tabs.create({ url });
+  $('ipm-btn-fallback').onclick = () => chrome.tabs.create({ url });
+  $('ipm-btn-close').onclick = () => {
+    modal.classList.add('hidden');
+    iframe.src = '';
+    clearTimeout(loadTimer);
+  };
 }
 
 // ===== 启动 =====
