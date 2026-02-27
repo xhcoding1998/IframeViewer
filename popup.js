@@ -100,7 +100,9 @@ async function handleScan() {
       func: collectIframes,
     });
 
-    iframeList = injected[0]?.result || [];
+    const rawList = injected[0]?.result || [];
+    // 过滤无效元素：src 为空且无 srcdoc 的 iframe 视为无效，不展示
+    iframeList = rawList.filter(({ src, srcdoc }) => src || srcdoc);
     renderIframeList(iframeList);
 
     if (iframeList.length === 0) {
@@ -274,7 +276,7 @@ function createIframeCard(iframe) {
   }
 
   // 事件绑定
-  card.querySelector('.btn-detail')?.addEventListener('click', () => openModal(index));
+  card.querySelector('.btn-detail')?.addEventListener('click', () => openModalAndCapture(index));
   card.querySelector('.src-copy-btn')?.addEventListener('click', (e) => {
     copyText(e.currentTarget.dataset.src);
   });

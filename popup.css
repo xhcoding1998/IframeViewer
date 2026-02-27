@@ -194,11 +194,9 @@ body {
 /* ===== iframe 列表 ===== */
 .iframe-list {
   flex: 1;
+  min-height: 0; /* 允许 flex 子项正常收缩，使 overflow-y 生效 */
   overflow-y: auto;
   padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
@@ -213,6 +211,7 @@ body {
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   transition: border-color var(--transition), box-shadow var(--transition);
+  margin-bottom: 10px;
 }
 .iframe-card:hover {
   border-color: var(--accent-mid);
@@ -867,7 +866,7 @@ body {
 
 .param-row {
   display: grid;
-  grid-template-columns: 120px 1fr 32px;
+  grid-template-columns: 150px 1fr 32px;
   align-items: stretch;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
