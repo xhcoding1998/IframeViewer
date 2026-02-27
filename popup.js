@@ -128,9 +128,6 @@ async function init() {
   const btnCapture = $('btn-capture');
   if (btnCapture) btnCapture.addEventListener('click', handleCapture);
 
-  const btnRecapture = $('btn-recapture');
-  if (btnRecapture) btnRecapture.addEventListener('click', handleCapture);
-
   const btnSaveSnapshot = $('btn-save-snapshot');
   if (btnSaveSnapshot) btnSaveSnapshot.addEventListener('click', handleSaveSnapshot);
 
@@ -659,15 +656,14 @@ function switchTab(tabName) {
 async function handleCapture() {
   if (activeModalIndex < 0 || !currentTabId) return;
 
-  [$('btn-capture'), $('btn-recapture')].forEach((b) => { b.disabled = true; });
+  $('btn-capture').disabled = true;
 
-  // 显示加载态，隐藏旧快照
+  // 显示加载态，隐藏旧快照和缩放控件
   $('snap-idle').classList.add('hidden');
   $('snap-loading').classList.remove('hidden');
   $('zoom-viewport').classList.add('hidden');
   $('zoom-controls').classList.add('hidden');
-  $('btn-capture').classList.remove('hidden');
-  $('snapshot-size-hint').textContent = '';
+  $('snapshot-size-hint').textContent = '滚轮缩放 · 拖拽平移 · 双击还原';
 
   try {
     // 1. 注入函数：将目标 iframe 滚动到视口并返回精确位置
@@ -704,9 +700,10 @@ async function handleCapture() {
       img.src = croppedUrl;
     });
 
-    // 显示视口，切换工具栏状态
+    // 显示视口，截图按钮缩小贴左，展开缩放控件
     $('zoom-viewport').classList.remove('hidden');
-    $('btn-capture').classList.add('hidden');
+    $('btn-capture').classList.remove('btn-full');
+    $('btn-capture').classList.add('btn-sm');
     $('zoom-controls').classList.remove('hidden');
     $('snapshot-size-hint').textContent =
       `原始尺寸 ${img.naturalWidth} × ${img.naturalHeight} px · 滚轮缩放 · 双击还原`;
@@ -715,12 +712,16 @@ async function handleCapture() {
     zoomFit();
 
   } catch (err) {
+    // 失败时重置为全宽截图按钮初始态
     $('snap-idle').classList.remove('hidden');
+    $('zoom-controls').classList.add('hidden');
+    $('btn-capture').classList.add('btn-full');
+    $('btn-capture').classList.remove('btn-sm');
     $('snapshot-size-hint').textContent = `截图失败：${err.message}`;
     console.error('截图错误:', err);
   } finally {
     $('snap-loading').classList.add('hidden');
-    [$('btn-capture'), $('btn-recapture')].forEach((b) => { b.disabled = false; });
+    $('btn-capture').disabled = false;
   }
 }
 
@@ -980,8 +981,9 @@ function resetSnapshotPanel() {
   $('snap-loading').classList.add('hidden');
   $('zoom-viewport').classList.add('hidden');
   $('zoom-controls').classList.add('hidden');
-  $('btn-capture').classList.remove('hidden');
-  $('snapshot-size-hint').textContent = '';
+  $('btn-capture').classList.add('btn-full');
+  $('btn-capture').classList.remove('btn-sm');
+  $('snapshot-size-hint').textContent = '滚轮缩放 · 拖拽平移 · 双击还原';
   lastSnapshotUrl = '';
 }
 

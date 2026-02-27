@@ -686,7 +686,8 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 .zoom-controls.hidden { display: none; }
 
@@ -715,13 +716,17 @@ body {
 #btn-save-snapshot { margin-left: auto; }
 
 .snapshot-size-hint {
-  padding: 0 12px 6px;
+  padding: 4px 12px 6px;
   font-size: 11px;
   color: var(--text-muted);
   text-align: center;
   flex-shrink: 0;
   background: var(--bg-modal);
   line-height: 1;
+  min-height: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ===== 通用小图标按钮 ===== */
